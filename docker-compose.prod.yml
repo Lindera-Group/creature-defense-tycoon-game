@@ -1,0 +1,21 @@
+version: "3.8"
+
+services:
+  cdtgame:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    container_name: cdtgame
+    restart: unless-stopped
+    networks:
+      - traefik-proxy
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.cdtgame.rule=Host(`cdtgame.linderagroup.com`)"
+      - "traefik.http.routers.cdtgame.entrypoints=websecure"
+      - "traefik.http.routers.cdtgame.tls.certresolver=letsencrypt"
+      - "traefik.http.services.cdtgame.loadbalancer.server.port=8080"
+
+networks:
+  traefik-proxy:
+    external: true

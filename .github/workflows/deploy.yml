@@ -1,0 +1,14 @@
+name: Deploy to VPS
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    uses: lindera-group/.github/.github/workflows/deploy-docker.yml@main
+    with:
+      app_name: cdtgame
+      health_endpoint: /
+      build_frontend: true
+    secrets: inherit

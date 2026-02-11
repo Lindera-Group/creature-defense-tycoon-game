@@ -1,0 +1,54 @@
+{
+  "mcpServers": {
+    "context7": {
+      "command": "npx",
+      "args": ["-y", "@upstash/context7-mcp@latest"],
+      "description": "Library documentation (Three.js, R3F, Zustand, Rapier docs)"
+    },
+    "memory": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-memory"],
+      "description": "Persistent game design context and RAG for conversation history"
+    },
+    "filesystem": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@anthropic-ai/mcp-server-filesystem@latest",
+        "/Users/martin/Documents/GitHub/creature-defense-tycoon-game"
+      ],
+      "description": "Project file operations"
+    },
+    "github": {
+      "command": "npx",
+      "args": ["-y", "@anthropic-ai/mcp-server-github@latest"],
+      "env": {
+        "GITHUB_PERSONAL_ACCESS_TOKEN": "${GITHUB_TOKEN}"
+      },
+      "description": "GitHub repo management"
+    },
+    "brave-search": {
+      "command": "npx",
+      "args": ["-y", "@anthropic-ai/mcp-server-brave-search@latest"],
+      "env": {
+        "BRAVE_API_KEY": "${BRAVE_API_KEY}"
+      },
+      "description": "Web search for game dev resources and references"
+    },
+    "playwright": {
+      "command": "npx",
+      "args": ["-y", "@anthropic-ai/mcp-server-playwright@latest"],
+      "description": "Browser testing and visual QA for the game"
+    },
+    "sequential-thinking": {
+      "command": "npx",
+      "args": ["-y", "@anthropic-ai/mcp-server-sequential-thinking@latest"],
+      "description": "Complex game design and architecture reasoning"
+    },
+    "image-gen": {
+      "command": "npx",
+      "args": ["-y", "@anthropic-ai/mcp-server-image-gen@latest"],
+      "description": "Generate concept art, textures, and UI graphics"
+    }
+  }
+}

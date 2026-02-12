@@ -5,11 +5,65 @@ on:
     branches: [main]
   workflow_dispatch:
 
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: lindera-group/cdtgame
+
 jobs:
-  deploy:
-    uses: lindera-group/.github/.github/workflows/deploy-docker.yml@main
-    with:
-      app_name: cdtgame
-      health_endpoint: /
-      build_frontend: false
-    secrets: inherit
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: docker/Dockerfile
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
+
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.VPS_SSH_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          echo "${{ secrets.VPS_KNOWN_HOSTS }}" >> ~/.ssh/known_hosts
+
+      - name: Deploy to VPS
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+        run: |
+          scp docker-compose.prod.yml root@$VPS_HOST:/opt/cdtgame/docker-compose.prod.yml
+
+          ssh root@$VPS_HOST "
+            cd /opt/cdtgame &&
+            echo '${{ secrets.GITHUB_TOKEN }}' | docker login ghcr.io -u ${{ github.actor }} --password-stdin &&
+            docker compose -f docker-compose.prod.yml pull &&
+            docker compose -f docker-compose.prod.yml up -d &&
+            docker logout ghcr.io
+          "
+
+      - name: Verify deployment
+        run: |
+          sleep 15
+          HTTP_CODE=$(curl -sf -o /dev/null -w "%{http_code}" "https://cdtgame.linderagroup.com/" || echo "000")
+          if [ "$HTTP_CODE" = "200" ]; then
+            echo "✓ Health check passed (HTTP $HTTP_CODE)"
+          else
+            echo "⚠ Health check returned HTTP $HTTP_CODE"
+          fi

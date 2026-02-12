@@ -1,10 +1,6 @@
-version: "3.8"
-
 services:
   cdtgame:
-    build:
-      context: .
-      dockerfile: docker/Dockerfile
+    image: ghcr.io/lindera-group/cdtgame:latest
     container_name: cdtgame
     restart: unless-stopped
     networks:

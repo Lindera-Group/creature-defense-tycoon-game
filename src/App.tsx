@@ -1,44 +1,78 @@
 import { Canvas } from "@react-three/fiber";
-import { Suspense } from "react";
+import { Suspense, useRef, useCallback } from "react";
+import * as THREE from "three";
+import { Forest } from "@game/world/Forest";
+import { Player } from "@game/entities/Player";
+import { EnemyManager, type EnemyManagerHandle } from "@game/entities/EnemyManager";
+import { CombatSystem } from "@game/systems/CombatSystem";
+import { CoinSystem } from "@game/systems/CoinSystem";
+import { WaveSystem } from "@game/systems/WaveSystem";
+import { HUD } from "@game/ui/HUD";
+import { WeaponPickupButton } from "@game/ui/WeaponPickupButton";
+import { Shop } from "@game/ui/Shop";
+import { StartScreen } from "@game/ui/StartScreen";
+import { GameOverScreen } from "@game/ui/GameOverScreen";
+import { VictoryScreen } from "@game/ui/VictoryScreen";
+import { WaveAnnouncement } from "@game/ui/WaveAnnouncement";
+import { useGameStore } from "@game/stores/gameStore";
+import { useEconomyStore } from "@game/stores/economyStore";
 
-function LoadingScreen() {
+function GameScene() {
+  const playerRef = useRef<THREE.Group>(null);
+  const enemyManagerRef = useRef<EnemyManagerHandle>(null);
+
+  const handleEnemyDeath = useCallback((position: [number, number, number]) => {
+    useEconomyStore.getState().queueCoinSpawn(position);
+  }, []);
+
+  const handleHit = useCallback((_position: [number, number, number], _damage: number) => {
+    // Hit effects can be added later
+  }, []);
+
   return (
-    <div
-      style={{
-        position: "absolute",
-        inset: 0,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        background: "#1a1a2e",
-        color: "#e0e0e0",
-        fontFamily: "system-ui, sans-serif",
-        fontSize: "2rem",
-      }}
-    >
-      Loading Creature Defense Tycoon...
-    </div>
+    <>
+      <Forest />
+      <Player ref={playerRef} />
+      <EnemyManager
+        ref={enemyManagerRef}
+        playerRef={playerRef}
+        onEnemyDeath={handleEnemyDeath}
+      />
+      <CombatSystem
+        playerRef={playerRef}
+        enemyManagerRef={enemyManagerRef}
+        onHit={handleHit}
+      />
+      <CoinSystem playerRef={playerRef} />
+      <WaveSystem enemyManagerRef={enemyManagerRef} />
+    </>
   );
 }
 
 export function App() {
+  const gameStarted = useGameStore((s) => s.gameStarted);
+  const gameOver = useGameStore((s) => s.gameOver);
+  const isVictory = useGameStore((s) => s.isVictory);
+  const announcement = useGameStore((s) => s.announcement);
+
   return (
     <>
       <Canvas
-        camera={{ position: [0, 10, 15], fov: 60 }}
+        camera={{ position: [0, 8, 12], fov: 60 }}
         shadows
       >
         <Suspense fallback={null}>
-          <ambientLight intensity={0.4} />
-          <directionalLight position={[10, 10, 5]} intensity={1} castShadow />
-          {/* Game world will be mounted here */}
-          <mesh position={[0, 0, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-            <planeGeometry args={[50, 50]} />
-            <meshStandardMaterial color="#2d5a1e" />
-          </mesh>
+          <GameScene />
         </Suspense>
       </Canvas>
-      <LoadingScreen />
+
+      {!gameStarted && <StartScreen />}
+      {!gameStarted && <WeaponPickupButton />}
+      {gameStarted && !gameOver && !isVictory && <HUD />}
+      {gameStarted && !gameOver && !isVictory && <Shop />}
+      {gameOver && !isVictory && <GameOverScreen />}
+      {isVictory && <VictoryScreen />}
+      {announcement && <WaveAnnouncement text={announcement} />}
     </>
   );
 }

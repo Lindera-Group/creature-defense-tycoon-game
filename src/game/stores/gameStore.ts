@@ -6,7 +6,6 @@ import { PLAYER_DEFAULTS } from "@shared/constants";
 interface GameStoreState {
   phase: RebirthPhase;
   wave: number;
-  coins: number;
   playerHealth: number;
   playerMaxHealth: number;
   equippedWeapon: WeaponType | null;
@@ -16,6 +15,8 @@ interface GameStoreState {
   gameStarted: boolean;
   gamePaused: boolean;
   gameOver: boolean;
+  isVictory: boolean;
+  announcement: string;
 }
 
 interface GameStoreActions {
@@ -25,13 +26,14 @@ interface GameStoreActions {
   takeDamage: (amount: number) => void;
   nextWave: () => void;
   setEnemiesAlive: (count: number) => void;
+  setVictory: (v: boolean) => void;
+  setAnnouncement: (text: string) => void;
   resetGame: () => void;
 }
 
 const initialState: GameStoreState = {
   phase: 0,
   wave: 0,
-  coins: PLAYER_DEFAULTS.startingCoins,
   playerHealth: PLAYER_DEFAULTS.health,
   playerMaxHealth: PLAYER_DEFAULTS.health,
   equippedWeapon: null,
@@ -41,6 +43,8 @@ const initialState: GameStoreState = {
   gameStarted: false,
   gamePaused: false,
   gameOver: false,
+  isVictory: false,
+  announcement: "",
 };
 
 export const useGameStore = create<GameStoreState & GameStoreActions>()(
@@ -83,6 +87,16 @@ export const useGameStore = create<GameStoreState & GameStoreActions>()(
     setEnemiesAlive: (count) =>
       set((state) => {
         state.enemiesAlive = count;
+      }),
+
+    setVictory: (v) =>
+      set((state) => {
+        state.isVictory = v;
+      }),
+
+    setAnnouncement: (text) =>
+      set((state) => {
+        state.announcement = text;
       }),
 
     resetGame: () =>

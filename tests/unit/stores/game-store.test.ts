@@ -8,7 +8,6 @@ describe("GameStore", () => {
 
   it("should initialize with default state", () => {
     const state = useGameStore.getState();
-    expect(state.coins).toBe(0);
     expect(state.playerHealth).toBe(100);
     expect(state.playerMaxHealth).toBe(100);
     expect(state.wave).toBe(0);

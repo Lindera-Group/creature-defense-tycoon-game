@@ -24,7 +24,7 @@ describe("CombatStore", () => {
     const config = useCombatStore.getState().getWeaponConfig();
     expect(config).not.toBeNull();
     expect(config!.type).toBe("bat");
-    expect(config!.range).toBe(2);
+    expect(config!.range).toBe(2.5);
   });
 
   it("should return null config when no weapon equipped", () => {

@@ -4,8 +4,13 @@ import type { WeaponType } from "@shared/types";
 import { WEAPONS } from "@shared/constants";
 import { useGameStore } from "./gameStore";
 
+interface CoinSpawnRequest {
+  position: [number, number, number];
+}
+
 interface EconomyStoreState {
   coins: number;
+  pendingCoinSpawns: CoinSpawnRequest[];
 }
 
 interface EconomyStoreActions {
@@ -14,12 +19,15 @@ interface EconomyStoreActions {
   canAfford: (cost: number) => boolean;
   rollCoinDrop: (range: [min: number, max: number]) => number;
   buyWeapon: (weaponType: WeaponType) => boolean;
+  queueCoinSpawn: (position: [number, number, number]) => void;
+  drainCoinSpawns: () => CoinSpawnRequest[];
   reset: () => void;
 }
 
 export const useEconomyStore = create<EconomyStoreState & EconomyStoreActions>()(
   immer((set, get) => ({
     coins: 0,
+    pendingCoinSpawns: [],
 
     addCoins: (amount) =>
       set((state) => {
@@ -55,6 +63,21 @@ export const useEconomyStore = create<EconomyStoreState & EconomyStoreActions>()
       return true;
     },
 
-    reset: () => set({ coins: 0 }),
+    queueCoinSpawn: (position) =>
+      set((state) => {
+        state.pendingCoinSpawns.push({ position });
+      }),
+
+    drainCoinSpawns: () => {
+      const spawns = [...get().pendingCoinSpawns];
+      if (spawns.length > 0) {
+        set((state) => {
+          state.pendingCoinSpawns = [];
+        });
+      }
+      return spawns;
+    },
+
+    reset: () => set({ coins: 0, pendingCoinSpawns: [] }),
   })),
 );

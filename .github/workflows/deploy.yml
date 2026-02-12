@@ -11,5 +11,5 @@ jobs:
     with:
       app_name: cdtgame
       health_endpoint: /
-      build_frontend: true
+      build_frontend: false
     secrets: inherit

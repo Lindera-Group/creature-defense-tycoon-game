@@ -1,17 +1,20 @@
 import { useGameStore } from "@game/stores/gameStore";
 import { useEconomyStore } from "@game/stores/economyStore";
 import { useCombatStore } from "@game/stores/combatStore";
+import { useBuildingStore } from "@game/stores/buildingStore";
 
 export function GameOverScreen() {
   const resetGame = useGameStore((s) => s.resetGame);
   const resetEconomy = useEconomyStore((s) => s.reset);
   const resetCombat = useCombatStore((s) => s.reset);
+  const resetBuildings = useBuildingStore((s) => s.resetBuildings);
   const wave = useGameStore((s) => s.wave);
 
   const handleRetry = () => {
     resetGame();
     resetEconomy();
     resetCombat();
+    resetBuildings();
   };
 
   return (

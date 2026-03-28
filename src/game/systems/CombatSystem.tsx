@@ -4,18 +4,30 @@ import * as THREE from "three";
 import { useCombatStore } from "@game/stores/combatStore";
 import { useGameStore } from "@game/stores/gameStore";
 import type { EnemyManagerHandle } from "@game/entities/EnemyManager";
+import type { ProjectileRequest } from "@game/systems/ProjectileSystem";
 import { findEnemiesInRange, isInFrontArc } from "./combatHelpers";
+
+// Projectile colors per weapon type
+const PROJECTILE_COLORS: Record<string, string> = {
+  crossbow: "#8B7355",
+  shotgun: "#888888",
+  rifle: "#FFD700",
+  minigun: "#FF8C00",
+  rocket_launcher: "#FF4444",
+};
 
 interface CombatSystemProps {
   playerRef: React.RefObject<THREE.Group | null>;
   enemyManagerRef: React.RefObject<EnemyManagerHandle | null>;
   onHit: (position: [number, number, number], damage: number) => void;
+  onSpawnProjectile?: (request: ProjectileRequest) => void;
 }
 
 export function CombatSystem({
   playerRef,
   enemyManagerRef,
   onHit,
+  onSpawnProjectile,
 }: CombatSystemProps) {
   const spaceHeldRef = useRef(false);
 
@@ -41,19 +53,17 @@ export function CombatSystem({
       weaponConfig.range,
     );
 
-    // Melee weapons hit 360°, ranged weapons use front arc
-    const targets = weaponConfig.isRanged
-      ? inRange.filter((e) =>
-          isInFrontArc({ x: playerPos.x, z: playerPos.z }, playerRot, {
-            x: e.x,
-            z: e.z,
-          }),
-        )
-      : inRange;
+    // All weapons use 180° front arc
+    const targets = inRange.filter((e) =>
+      isInFrontArc({ x: playerPos.x, z: playerPos.z }, playerRot, {
+        x: e.x,
+        z: e.z,
+      }),
+    );
 
     if (targets.length === 0) return;
 
-    // Hit closest enemy
+    // Find closest enemy
     let closest = targets[0];
     let closestDist = Infinity;
     for (const enemy of targets) {
@@ -66,14 +76,32 @@ export function CombatSystem({
       }
     }
 
-    // Apply damage through EnemyManager
-    const liveEnemy = alive.find((e) => e.id === closest.id);
-    if (liveEnemy) {
-      liveEnemy.takeDamage(damage);
-      store.registerHit(closest.id, damage);
-      onHit([closest.x, 1, closest.z], damage);
+    if (weaponConfig.isRanged && onSpawnProjectile) {
+      // Ranged: spawn projectile — hit registration and damage numbers
+      // are deferred to ProjectileSystem.onImpact when projectile arrives
+      onSpawnProjectile({
+        start: [playerPos.x, 1.2, playerPos.z],
+        target: [closest.x, 1, closest.z],
+        speed: weaponConfig.projectileSpeed ?? 15,
+        damage,
+        aoeRadius: weaponConfig.aoeRadius,
+        color: PROJECTILE_COLORS[weaponConfig.type] ?? "#FFFFFF",
+      });
+
+      // Auto-face the target for ranged weapons
+      const dx = closest.x - playerPos.x;
+      const dz = closest.z - playerPos.z;
+      playerRef.current.rotation.y = Math.atan2(dx, dz);
+    } else {
+      // Melee: instant damage
+      const liveEnemy = alive.find((e) => e.id === closest.id);
+      if (liveEnemy) {
+        liveEnemy.takeDamage(damage);
+        store.registerHit(closest.id, damage);
+        onHit([closest.x, 1, closest.z], damage);
+      }
     }
-  }, [playerRef, enemyManagerRef, onHit]);
+  }, [playerRef, enemyManagerRef, onHit, onSpawnProjectile]);
 
   // Track space held for auto-attack
   useEffect(() => {

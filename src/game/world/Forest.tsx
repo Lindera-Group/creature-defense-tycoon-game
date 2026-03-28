@@ -7,7 +7,7 @@ export function Forest() {
   return (
     <>
       <color attach="background" args={[FOREST_CONFIG.skyColor]} />
-      <fog attach="fog" args={[FOREST_CONFIG.skyColor, 30, 60]} />
+      <fog attach="fog" args={[FOREST_CONFIG.skyColor, 35, 75]} />
       <ForestLighting />
       <Ground />
       <Trees />

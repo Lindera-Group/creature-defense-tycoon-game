@@ -6,7 +6,7 @@ import type { KeyboardInput } from "@game/entities/playerHelpers";
  * Returns a ref that is always current (no re-renders on keypress).
  */
 export function useKeyboardInput() {
-  const keys = useRef<KeyboardInput>({ w: false, a: false, s: false, d: false });
+  const keys = useRef<KeyboardInput>({ w: false, a: false, s: false, d: false, shift: false });
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
@@ -26,6 +26,10 @@ export function useKeyboardInput() {
         case "KeyD":
         case "ArrowRight":
           keys.current.d = true;
+          break;
+        case "ShiftLeft":
+        case "ShiftRight":
+          keys.current.shift = true;
           break;
       }
     };
@@ -47,6 +51,10 @@ export function useKeyboardInput() {
         case "KeyD":
         case "ArrowRight":
           keys.current.d = false;
+          break;
+        case "ShiftLeft":
+        case "ShiftRight":
+          keys.current.shift = false;
           break;
       }
     };

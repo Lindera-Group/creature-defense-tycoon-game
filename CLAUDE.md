@@ -17,7 +17,7 @@
 
 ```bash
 # Development
-npm run dev              # Start dev server (localhost:5173)
+npm run dev              # Start dev server (localhost:5175, strictPort)
 npm run build            # Production build
 npm run preview          # Preview production build
 

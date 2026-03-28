@@ -4,7 +4,8 @@ import { WAVE_CONFIGS } from "@shared/waveConfigs";
 import { useGameStore } from "@game/stores/gameStore";
 import { useEconomyStore } from "@game/stores/economyStore";
 import type { EnemyManagerHandle } from "@game/entities/EnemyManager";
-import { FOREST_CONFIG } from "@game/world/forestHelpers";
+import { FOREST_CONFIG, getTreePositions } from "@game/world/forestHelpers";
+import { getTreeSpawnPosition } from "@game/systems/spawnHelpers";
 
 type WaveState = "idle" | "spawning" | "active" | "waveComplete" | "interWave" | "allComplete";
 
@@ -15,9 +16,12 @@ interface WaveSystemProps {
 export function WaveSystem({ enemyManagerRef }: WaveSystemProps) {
   const stateRef = useRef<WaveState>("idle");
   const spawnTimerRef = useRef(0);
-  const spawnedCountRef = useRef(0);
+  // Track spawn progress per enemy group: [groupIdx] = count spawned
+  const spawnedPerGroupRef = useRef<number[]>([]);
+  const currentGroupIdxRef = useRef(0); // round-robin index across groups
   const interWaveTimerRef = useRef(0);
   const waveIndexRef = useRef(-1);
+  const announcementTimersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
 
   const wave = useGameStore((s) => s.wave);
   const gameStarted = useGameStore((s) => s.gameStarted);
@@ -26,6 +30,13 @@ export function WaveSystem({ enemyManagerRef }: WaveSystemProps) {
   const nextWave = useGameStore((s) => s.nextWave);
   const addCoins = useEconomyStore((s) => s.addCoins);
 
+  const clearAnnouncementTimers = useCallback(() => {
+    for (const id of announcementTimersRef.current) {
+      clearTimeout(id);
+    }
+    announcementTimersRef.current = [];
+  }, []);
+
   const setState = useCallback(
     (newState: WaveState) => {
       stateRef.current = newState;
@@ -33,10 +44,12 @@ export function WaveSystem({ enemyManagerRef }: WaveSystemProps) {
 
       if (newState === "spawning") {
         store.setAnnouncement(`Wave ${store.wave}`);
-        setTimeout(() => useGameStore.getState().setAnnouncement(""), 2000);
+        const id = setTimeout(() => useGameStore.getState().setAnnouncement(""), 2000);
+        announcementTimersRef.current.push(id);
       } else if (newState === "waveComplete") {
         store.setAnnouncement(`Wave ${store.wave} Complete!`);
-        setTimeout(() => useGameStore.getState().setAnnouncement(""), 2000);
+        const id = setTimeout(() => useGameStore.getState().setAnnouncement(""), 2000);
+        announcementTimersRef.current.push(id);
       } else if (newState === "allComplete") {
         store.setVictory(true);
       }
@@ -49,30 +62,28 @@ export function WaveSystem({ enemyManagerRef }: WaveSystemProps) {
     if (!gameStarted && !gameOver) {
       stateRef.current = "idle";
       waveIndexRef.current = -1;
-      spawnedCountRef.current = 0;
+      spawnedPerGroupRef.current = [];
+      currentGroupIdxRef.current = 0;
       spawnTimerRef.current = 0;
       interWaveTimerRef.current = 0;
+      clearAnnouncementTimers();
     }
-  }, [gameStarted, gameOver]);
+  }, [gameStarted, gameOver, clearAnnouncementTimers]);
 
   // Start first wave when game starts
   useEffect(() => {
     if (gameStarted && stateRef.current === "idle" && wave === 1) {
       waveIndexRef.current = 0;
-      spawnedCountRef.current = 0;
+      spawnedPerGroupRef.current = [];
+      currentGroupIdxRef.current = 0;
       spawnTimerRef.current = 0;
       setState("spawning");
     }
   }, [gameStarted, wave, setState]);
 
   const getSpawnPosition = useCallback((): [number, number, number] => {
-    const angle = Math.random() * Math.PI * 2;
-    const spawnDist = FOREST_CONFIG.clearRadius + 5;
-    return [
-      Math.cos(angle) * spawnDist,
-      0,
-      Math.sin(angle) * spawnDist,
-    ];
+    const trees = getTreePositions();
+    return getTreeSpawnPosition(trees, FOREST_CONFIG.clearRadius);
   }, []);
 
   useFrame((_, delta) => {
@@ -83,29 +94,53 @@ export function WaveSystem({ enemyManagerRef }: WaveSystemProps) {
     if (waveIdx < 0 || waveIdx >= WAVE_CONFIGS.length) return;
 
     const waveConfig = WAVE_CONFIGS[waveIdx];
-    const enemyGroup = waveConfig.enemies[0];
 
     if (state === "spawning") {
       spawnTimerRef.current += delta;
 
-      if (
-        spawnTimerRef.current >= enemyGroup.spawnDelay &&
-        spawnedCountRef.current < enemyGroup.count
-      ) {
-        spawnTimerRef.current = 0;
-        spawnedCountRef.current++;
+      // Initialize spawn tracking for this wave if needed
+      if (spawnedPerGroupRef.current.length === 0) {
+        spawnedPerGroupRef.current = waveConfig.enemies.map(() => 0);
+      }
 
-        if (enemyManagerRef.current) {
-          enemyManagerRef.current.spawnEnemy(getSpawnPosition());
+      // Round-robin: find next group that still has enemies to spawn
+      const numGroups = waveConfig.enemies.length;
+      let found = false;
+      for (let attempt = 0; attempt < numGroups; attempt++) {
+        const groupIdx = currentGroupIdxRef.current % numGroups;
+        const enemyGroup = waveConfig.enemies[groupIdx];
+
+        if (spawnedPerGroupRef.current[groupIdx] < enemyGroup.count) {
+          // This group still has enemies — check spawn timer
+          if (spawnTimerRef.current >= enemyGroup.spawnDelay) {
+            spawnTimerRef.current = 0;
+            spawnedPerGroupRef.current[groupIdx]++;
+
+            if (enemyManagerRef.current) {
+              enemyManagerRef.current.spawnEnemy(getSpawnPosition(), enemyGroup.type);
+            }
+
+            // Advance to next group for true interleaving
+            currentGroupIdxRef.current++;
+          }
+          found = true;
+          break;
         }
 
-        if (spawnedCountRef.current >= enemyGroup.count) {
-          setState("active");
-        }
+        // This group is exhausted, skip to next
+        currentGroupIdxRef.current++;
+      }
+
+      // If no group has remaining enemies, all spawned
+      if (!found) {
+        setState("active");
       }
     }
 
-    if (state === "active" && enemiesAlive === 0 && spawnedCountRef.current > 0) {
+    // Check total spawned for wave completion detection
+    const totalSpawned = spawnedPerGroupRef.current.reduce((a, b) => a + b, 0);
+
+    if (state === "active" && enemiesAlive === 0 && totalSpawned > 0) {
       addCoins(waveConfig.bonusCoins);
       setState("waveComplete");
       interWaveTimerRef.current = 0;
@@ -127,7 +162,8 @@ export function WaveSystem({ enemyManagerRef }: WaveSystemProps) {
       interWaveTimerRef.current += delta;
       if (interWaveTimerRef.current >= 3) {
         waveIndexRef.current++;
-        spawnedCountRef.current = 0;
+        spawnedPerGroupRef.current = [];
+        currentGroupIdxRef.current = 0;
         spawnTimerRef.current = 0;
         nextWave();
         setState("spawning");

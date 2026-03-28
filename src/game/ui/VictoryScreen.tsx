@@ -1,17 +1,20 @@
 import { useGameStore } from "@game/stores/gameStore";
 import { useEconomyStore } from "@game/stores/economyStore";
 import { useCombatStore } from "@game/stores/combatStore";
+import { useBuildingStore } from "@game/stores/buildingStore";
 
 export function VictoryScreen() {
   const coins = useEconomyStore((s) => s.coins);
   const resetGame = useGameStore((s) => s.resetGame);
   const resetEconomy = useEconomyStore((s) => s.reset);
   const resetCombat = useCombatStore((s) => s.reset);
+  const resetBuildings = useBuildingStore((s) => s.resetBuildings);
 
   const handlePlayAgain = () => {
     resetGame();
     resetEconomy();
     resetCombat();
+    resetBuildings();
   };
 
   return (

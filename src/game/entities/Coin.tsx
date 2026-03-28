@@ -1,11 +1,13 @@
 import { useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
+import { computeCoinOpacity } from "@game/systems/coinHelpers";
 
 interface CoinProps {
   id: string;
   position: [number, number, number];
   amount: number;
+  spawnedAt: number;
   onCollect: (id: string, amount: number) => void;
   playerRef: React.RefObject<THREE.Group | null>;
 }
@@ -13,7 +15,7 @@ interface CoinProps {
 const PICKUP_RADIUS = 3;
 const MAGNET_RADIUS = 5;
 
-export function Coin({ id, position, amount, onCollect, playerRef }: CoinProps) {
+export function Coin({ id, position, amount, spawnedAt, onCollect, playerRef }: CoinProps) {
   const meshRef = useRef<THREE.Mesh>(null!);
   const collectedRef = useRef(false);
 
@@ -22,6 +24,14 @@ export function Coin({ id, position, amount, onCollect, playerRef }: CoinProps) 
 
     const coinPos = meshRef.current.position;
     const playerPos = playerRef.current.position;
+
+    // Update opacity based on age (for blink effect)
+    const currentTime = performance.now() / 1000;
+    const age = currentTime - spawnedAt;
+    const opacity = computeCoinOpacity(age);
+
+    const material = meshRef.current.material as THREE.MeshToonMaterial;
+    material.opacity = opacity;
 
     // Spin
     meshRef.current.rotation.y += delta * 3;
@@ -51,7 +61,13 @@ export function Coin({ id, position, amount, onCollect, playerRef }: CoinProps) 
   return (
     <mesh ref={meshRef} position={[position[0], position[1] + 0.5, position[2]]} castShadow>
       <cylinderGeometry args={[0.3, 0.3, 0.08, 12]} />
-      <meshToonMaterial color="#FFD700" emissive="#FFD700" emissiveIntensity={0.3} />
+      <meshToonMaterial
+        color="#FFD700"
+        emissive="#FFD700"
+        emissiveIntensity={0.3}
+        transparent={true}
+        opacity={1.0}
+      />
     </mesh>
   );
 }

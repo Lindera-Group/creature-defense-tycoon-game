@@ -10,3 +10,10 @@ vi.mock("three", async () => {
 
 // Silence R3F Canvas warnings in test environment
 (globalThis as Record<string, unknown>).IS_REACT_ACT_ENVIRONMENT = true;
+
+// Mock ResizeObserver for Canvas component
+global.ResizeObserver = vi.fn().mockImplementation(() => ({
+  observe: vi.fn(),
+  unobserve: vi.fn(),
+  disconnect: vi.fn(),
+}));

@@ -2,13 +2,15 @@
 
 import { PLAYER_DEFAULTS } from "@shared/constants";
 
-export const PLAYER_BOUNDS = 38; // Ground 80x80 → half=40, minus 2 margin
+export const WORLD_RADIUS = 80; // Circular world radius
+export const PLAYER_BOUNDS = WORLD_RADIUS - 2; // Margin from edge
 
 export interface KeyboardInput {
   w: boolean;
   a: boolean;
   s: boolean;
   d: boolean;
+  shift: boolean;
 }
 
 export interface Vec2 {
@@ -42,13 +44,30 @@ export function computeMovementVelocity(input: KeyboardInput): Vec2 {
 }
 
 /**
- * Clamp position within world bounds.
+ * Pass position through (no clamping — player can walk off the edge and die).
  */
 export function clampPosition(x: number, y: number, z: number): Vec3 {
+  return { x, y, z };
+}
+
+/**
+ * Check if position is past the world edge (death zone).
+ */
+export function isPastWorldEdge(x: number, z: number): boolean {
+  return Math.sqrt(x * x + z * z) >= WORLD_RADIUS;
+}
+
+/**
+ * Rotate a movement vector by the camera azimuth so that
+ * "forward" (W) always moves in the camera's forward direction.
+ */
+export function rotateMovementByCamera(velocity: Vec2, cameraAzimuth: number): Vec2 {
+  if (velocity.x === 0 && velocity.z === 0) return velocity;
+  const cos = Math.cos(cameraAzimuth);
+  const sin = Math.sin(cameraAzimuth);
   return {
-    x: Math.max(-PLAYER_BOUNDS, Math.min(PLAYER_BOUNDS, x)),
-    y,
-    z: Math.max(-PLAYER_BOUNDS, Math.min(PLAYER_BOUNDS, z)),
+    x: velocity.x * cos + velocity.z * sin,
+    z: -velocity.x * sin + velocity.z * cos,
   };
 }
 
@@ -63,3 +82,46 @@ export function computeRotation(velocity: Vec2): number | null {
 
 /** Player speed from constants */
 export const PLAYER_SPEED = PLAYER_DEFAULTS.speed;
+export const SPRINT_MULTIPLIER = 1.8;
+
+export interface BuildingPosition {
+  position: [number, number, number];
+}
+
+export const BUILDING_COLLISION_RADIUS = 0.8;
+
+/**
+ * Push player out of any overlapping buildings.
+ * Same push-out algorithm as resolveTreeCollision in forestHelpers.ts.
+ */
+export function resolveBuildingCollision(
+  x: number,
+  z: number,
+  playerRadius: number,
+  buildings: BuildingPosition[],
+): { x: number; z: number; collided: boolean } {
+  let outX = x;
+  let outZ = z;
+  let collided = false;
+
+  for (const building of buildings) {
+    const bx = building.position[0];
+    const bz = building.position[2];
+    const colR = BUILDING_COLLISION_RADIUS + playerRadius;
+    const dx = outX - bx;
+    const dz = outZ - bz;
+    const distSq = dx * dx + dz * dz;
+
+    if (distSq < colR * colR && distSq > 0) {
+      const dist = Math.sqrt(distSq);
+      const pushDist = colR - dist;
+      const nx = dx / dist;
+      const nz = dz / dist;
+      outX += nx * pushDist;
+      outZ += nz * pushDist;
+      collided = true;
+    }
+  }
+
+  return { x: outX, z: outZ, collided };
+}

@@ -2,15 +2,17 @@ import { useRef, useCallback, useImperativeHandle, forwardRef, useState, useEffe
 import * as THREE from "three";
 import { Zombie } from "./Zombie";
 import { useGameStore } from "@game/stores/gameStore";
+import type { EnemyType } from "@shared/types";
 
 interface EnemyInstance {
   id: string;
+  enemyType: EnemyType;
   position: [number, number, number];
   alive: boolean;
 }
 
 export interface EnemyManagerHandle {
-  spawnEnemy: (position: [number, number, number]) => void;
+  spawnEnemy: (position: [number, number, number], enemyType?: EnemyType) => void;
   getAliveEnemies: () => Array<{
     id: string;
     x: number;
@@ -18,11 +20,12 @@ export interface EnemyManagerHandle {
     health: number;
     takeDamage: (amount: number) => void;
   }>;
+  killAllEnemies: () => void;
 }
 
 export const EnemyManager = forwardRef<
   EnemyManagerHandle,
-  { playerRef: React.RefObject<THREE.Group | null>; onEnemyDeath: (position: [number, number, number]) => void }
+  { playerRef: React.RefObject<THREE.Group | null>; onEnemyDeath: (position: [number, number, number], enemyType: string) => void }
 >(function EnemyManager({ playerRef, onEnemyDeath }, ref) {
   const [enemies, setEnemies] = useState<EnemyInstance[]>([]);
   const zombieGroupsRef = useRef<Map<string, THREE.Group>>(new Map());
@@ -42,10 +45,10 @@ export const EnemyManager = forwardRef<
   }, [gameStarted, gameOver, setEnemiesAlive]);
 
   const spawnEnemy = useCallback(
-    (position: [number, number, number]) => {
-      const id = `zombie-${nextIdRef.current++}`;
+    (position: [number, number, number], enemyType: EnemyType = "zombie_green") => {
+      const id = `enemy-${nextIdRef.current++}`;
       setEnemies((prev) => {
-        const next = [...prev, { id, position, alive: true }];
+        const next = [...prev, { id, enemyType, position, alive: true }];
         setEnemiesAlive(next.filter((e) => e.alive).length);
         return next;
       });
@@ -79,13 +82,21 @@ export const EnemyManager = forwardRef<
     return result;
   }, []);
 
-  useImperativeHandle(ref, () => ({ spawnEnemy, getAliveEnemies }), [
+  const killAllEnemies = useCallback(() => {
+    const alive = getAliveEnemies();
+    for (const enemy of alive) {
+      enemy.takeDamage(99999);
+    }
+  }, [getAliveEnemies]);
+
+  useImperativeHandle(ref, () => ({ spawnEnemy, getAliveEnemies, killAllEnemies }), [
     spawnEnemy,
     getAliveEnemies,
+    killAllEnemies,
   ]);
 
   const handleDeath = useCallback(
-    (id: string, position: [number, number, number]) => {
+    (id: string, position: [number, number, number], enemyType: string) => {
       setEnemies((prev) => {
         const next = prev.map((e) =>
           e.id === id ? { ...e, alive: false } : e,
@@ -93,7 +104,7 @@ export const EnemyManager = forwardRef<
         setEnemiesAlive(next.filter((e) => e.alive).length);
         return next;
       });
-      onEnemyDeath(position);
+      onEnemyDeath(position, enemyType);
     },
     [setEnemiesAlive, onEnemyDeath],
   );
@@ -120,6 +131,7 @@ export const EnemyManager = forwardRef<
           >
             <Zombie
               id={enemy.id}
+              enemyType={enemy.enemyType}
               startPosition={enemy.position}
               playerRef={playerRef}
               onDeath={handleDeath}

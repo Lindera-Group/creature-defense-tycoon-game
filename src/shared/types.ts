@@ -111,6 +111,7 @@ export interface PlacedTurret {
   type: TurretType;
   position: [x: number, y: number, z: number];
   health: number;
+  rotation?: number; // Y-axis rotation in radians
 }
 
 export interface PlacedFortification {
@@ -118,6 +119,7 @@ export interface PlacedFortification {
   type: FortificationType;
   position: [x: number, y: number, z: number];
   health: number;
+  rotation?: number; // Y-axis rotation in radians
 }
 
 export interface WaveConfig {

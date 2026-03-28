@@ -73,4 +73,91 @@ describe("EconomyStore", () => {
     expect(result).toBe(false);
     expect(useEconomyStore.getState().coins).toBe(100);
   });
+
+  // === Coin spawn queue with enemy type (M2) ===
+
+  it("should queue coin spawns with enemy type", () => {
+    useEconomyStore.getState().queueCoinSpawn([1, 0, 2], "zombie_green");
+    useEconomyStore.getState().queueCoinSpawn([3, 0, 4], "zombie_boss");
+    const spawns = useEconomyStore.getState().drainCoinSpawns();
+    expect(spawns).toHaveLength(2);
+    expect(spawns[0].enemyType).toBe("zombie_green");
+    expect(spawns[0].position).toEqual([1, 0, 2]);
+    expect(spawns[1].enemyType).toBe("zombie_boss");
+  });
+
+  it("should drain coin spawns and clear queue", () => {
+    useEconomyStore.getState().queueCoinSpawn([0, 0, 0], "zombie_red");
+    const first = useEconomyStore.getState().drainCoinSpawns();
+    expect(first).toHaveLength(1);
+    const second = useEconomyStore.getState().drainCoinSpawns();
+    expect(second).toHaveLength(0);
+  });
+
+  it("should return empty array when no pending spawns", () => {
+    const spawns = useEconomyStore.getState().drainCoinSpawns();
+    expect(spawns).toHaveLength(0);
+  });
+
+  it("should clear pending spawns on reset", () => {
+    useEconomyStore.getState().queueCoinSpawn([0, 0, 0], "zombie_giant");
+    useEconomyStore.getState().reset();
+    const spawns = useEconomyStore.getState().drainCoinSpawns();
+    expect(spawns).toHaveLength(0);
+  });
+
+  // === Turret & Fortification purchases (M3) ===
+
+  describe("buyTurret", () => {
+    it("should deduct coins and return true", () => {
+      useEconomyStore.getState().addCoins(750);
+      const result = useEconomyStore.getState().buyTurret("basic_turret");
+      expect(result).toBe(true);
+      expect(useEconomyStore.getState().coins).toBe(100);
+    });
+
+    it("should refuse when insufficient coins", () => {
+      useEconomyStore.getState().addCoins(100);
+      const result = useEconomyStore.getState().buyTurret("basic_turret");
+      expect(result).toBe(false);
+      expect(useEconomyStore.getState().coins).toBe(100);
+    });
+
+    it("should allow multiple purchases of same type", () => {
+      useEconomyStore.getState().addCoins(1500);
+      expect(useEconomyStore.getState().buyTurret("basic_turret")).toBe(true);
+      expect(useEconomyStore.getState().buyTurret("basic_turret")).toBe(true);
+      expect(useEconomyStore.getState().coins).toBe(200);
+    });
+
+    it("should refuse phase-locked turret at wrong phase", () => {
+      useEconomyStore.getState().addCoins(10000);
+      const result = useEconomyStore.getState().buyTurret("silver_turret");
+      expect(result).toBe(false);
+      expect(useEconomyStore.getState().coins).toBe(10000);
+    });
+  });
+
+  describe("buyFortification", () => {
+    it("should deduct coins for wooden fence", () => {
+      useEconomyStore.getState().addCoins(100);
+      const result = useEconomyStore.getState().buyFortification("wooden_fence");
+      expect(result).toBe(true);
+      expect(useEconomyStore.getState().coins).toBe(35);
+    });
+
+    it("should refuse when insufficient coins", () => {
+      useEconomyStore.getState().addCoins(10);
+      const result = useEconomyStore.getState().buyFortification("wooden_fence");
+      expect(result).toBe(false);
+      expect(useEconomyStore.getState().coins).toBe(10);
+    });
+
+    it("should allow multiple purchases", () => {
+      useEconomyStore.getState().addCoins(200);
+      expect(useEconomyStore.getState().buyFortification("wooden_fence")).toBe(true);
+      expect(useEconomyStore.getState().buyFortification("wooden_fence")).toBe(true);
+      expect(useEconomyStore.getState().coins).toBe(70);
+    });
+  });
 });

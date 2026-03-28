@@ -17,6 +17,8 @@ interface GameStoreState {
   gameOver: boolean;
   isVictory: boolean;
   announcement: string;
+  bossHealth: number;
+  bossMaxHealth: number;
 }
 
 interface GameStoreActions {
@@ -28,6 +30,8 @@ interface GameStoreActions {
   setEnemiesAlive: (count: number) => void;
   setVictory: (v: boolean) => void;
   setAnnouncement: (text: string) => void;
+  setBossHealth: (health: number, maxHealth: number) => void;
+  clearBoss: () => void;
   resetGame: () => void;
 }
 
@@ -45,6 +49,8 @@ const initialState: GameStoreState = {
   gameOver: false,
   isVictory: false,
   announcement: "",
+  bossHealth: 0,
+  bossMaxHealth: 0,
 };
 
 export const useGameStore = create<GameStoreState & GameStoreActions>()(
@@ -97,6 +103,18 @@ export const useGameStore = create<GameStoreState & GameStoreActions>()(
     setAnnouncement: (text) =>
       set((state) => {
         state.announcement = text;
+      }),
+
+    setBossHealth: (health, maxHealth) =>
+      set((state) => {
+        state.bossHealth = health;
+        state.bossMaxHealth = maxHealth;
+      }),
+
+    clearBoss: () =>
+      set((state) => {
+        state.bossHealth = 0;
+        state.bossMaxHealth = 0;
       }),
 
     resetGame: () =>

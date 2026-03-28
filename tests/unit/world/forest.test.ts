@@ -8,9 +8,8 @@ import {
 
 describe("Forest World", () => {
   describe("FOREST_CONFIG", () => {
-    it("has ground dimensions >= 50x50", () => {
-      expect(FOREST_CONFIG.groundWidth).toBeGreaterThanOrEqual(50);
-      expect(FOREST_CONFIG.groundDepth).toBeGreaterThanOrEqual(50);
+    it("has world radius >= 50", () => {
+      expect(FOREST_CONFIG.worldRadius).toBeGreaterThanOrEqual(50);
     });
 
     it("has enough trees for a dense forest", () => {
@@ -25,7 +24,7 @@ describe("Forest World", () => {
   describe("createTreePositions", () => {
     it("generates a large number of tree positions", () => {
       const positions = createTreePositions(FOREST_CONFIG.treeCount, FOREST_CONFIG.clearRadius);
-      expect(positions.length).toBeGreaterThanOrEqual(50);
+      expect(positions.length).toBeGreaterThanOrEqual(100);
     });
 
     it("trees are not placed within clearRadius of center (spawn area)", () => {
@@ -36,13 +35,11 @@ describe("Forest World", () => {
       }
     });
 
-    it("trees stay within world bounds", () => {
-      const halfW = FOREST_CONFIG.groundWidth / 2;
-      const halfD = FOREST_CONFIG.groundDepth / 2;
+    it("trees stay within world radius", () => {
       const positions = createTreePositions(FOREST_CONFIG.treeCount, FOREST_CONFIG.clearRadius);
       for (const pos of positions) {
-        expect(Math.abs(pos.x)).toBeLessThanOrEqual(halfW);
-        expect(Math.abs(pos.z)).toBeLessThanOrEqual(halfD);
+        const dist = Math.sqrt(pos.x * pos.x + pos.z * pos.z);
+        expect(dist).toBeLessThanOrEqual(FOREST_CONFIG.worldRadius);
       }
     });
 
@@ -56,6 +53,25 @@ describe("Forest World", () => {
           expect(dist).toBeGreaterThanOrEqual(2.0);
         }
       }
+    });
+
+    it("forest has more trees at the perimeter (outer ring)", () => {
+      const positions = createTreePositions(FOREST_CONFIG.treeCount, FOREST_CONFIG.clearRadius);
+      const outerRingMin = 25;
+      const innerRingMax = 25;
+
+      const outerTrees = positions.filter(pos => {
+        const dist = Math.sqrt(pos.x * pos.x + pos.z * pos.z);
+        return dist >= outerRingMin;
+      });
+
+      const innerTrees = positions.filter(pos => {
+        const dist = Math.sqrt(pos.x * pos.x + pos.z * pos.z);
+        return dist < innerRingMax && dist >= FOREST_CONFIG.clearRadius;
+      });
+
+      // Outer ring should have more trees than inner ring
+      expect(outerTrees.length).toBeGreaterThan(innerTrees.length);
     });
   });
 

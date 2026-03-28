@@ -159,9 +159,9 @@ export const WEAPONS: Record<string, WeaponConfig> = {
   rifle: {
     type: "rifle",
     cost: 1500,
-    damage: 40,
+    damage: 30,
     attackSpeed: 3,
-    range: 40,
+    range: 30,
     isRanged: true,
     projectileSpeed: 40,
     unlockedAtPhase: 0,
@@ -226,15 +226,15 @@ export const WEAPONS: Record<string, WeaponConfig> = {
 export const TURRETS: Record<string, TurretConfig> = {
   basic_turret: {
     type: "basic_turret",
-    cost: 500,
-    damage: 15,
+    cost: 650,
+    damage: 10,
     attackSpeed: 2,
     range: 15,
     unlockedAtPhase: 0,
   },
   laser_turret: {
     type: "laser_turret",
-    cost: 2000,
+    cost: 2500,
     damage: 40,
     attackSpeed: 3,
     range: 25,
@@ -242,7 +242,7 @@ export const TURRETS: Record<string, TurretConfig> = {
   },
   artillery: {
     type: "artillery",
-    cost: 5000,
+    cost: 6500,
     damage: 100,
     attackSpeed: 0.5,
     range: 40,
@@ -250,7 +250,7 @@ export const TURRETS: Record<string, TurretConfig> = {
   },
   silver_turret: {
     type: "silver_turret",
-    cost: 3000,
+    cost: 4000,
     damage: 50,
     attackSpeed: 2,
     range: 20,
@@ -258,7 +258,7 @@ export const TURRETS: Record<string, TurretConfig> = {
   },
   holy_cannon: {
     type: "holy_cannon",
-    cost: 8000,
+    cost: 10000,
     damage: 120,
     attackSpeed: 1,
     range: 35,
@@ -273,37 +273,37 @@ export const TURRETS: Record<string, TurretConfig> = {
 export const FORTIFICATIONS: Record<string, FortificationConfig> = {
   wooden_fence: {
     type: "wooden_fence",
-    cost: 50,
+    cost: 65,
     health: 100,
     unlockedAtPhase: 0,
   },
   stone_wall: {
     type: "stone_wall",
-    cost: 200,
+    cost: 250,
     health: 500,
     unlockedAtPhase: 0,
   },
   watchtower: {
     type: "watchtower",
-    cost: 500,
+    cost: 650,
     health: 300,
     unlockedAtPhase: 0,
   },
   fort: {
     type: "fort",
-    cost: 2000,
+    cost: 2500,
     health: 2000,
     unlockedAtPhase: 0,
   },
   castle: {
     type: "castle",
-    cost: 5000,
+    cost: 6500,
     health: 5000,
     unlockedAtPhase: 1,
   },
   mega_fortress: {
     type: "mega_fortress",
-    cost: 10000,
+    cost: 13000,
     health: 10000,
     unlockedAtPhase: 2,
   },

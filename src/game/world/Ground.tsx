@@ -7,9 +7,7 @@ export function Ground() {
       position={[0, 0, 0]}
       receiveShadow
     >
-      <planeGeometry
-        args={[FOREST_CONFIG.groundWidth, FOREST_CONFIG.groundDepth]}
-      />
+      <circleGeometry args={[FOREST_CONFIG.worldRadius, 64]} />
       <meshToonMaterial color={FOREST_CONFIG.groundColor} />
     </mesh>
   );

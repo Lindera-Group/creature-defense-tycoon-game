@@ -1,9 +1,8 @@
 // Pure logic for forest world generation — testable without R3F
 
 export const FOREST_CONFIG = {
-  groundWidth: 80,
-  groundDepth: 80,
-  treeCount: 80,
+  worldRadius: 80,
+  treeCount: 360,
   clearRadius: 12,
   treeCollisionRadius: 0.8,
   groundColor: "#3a7d2c",
@@ -38,19 +37,21 @@ export function createTreePositions(
   clearRadius: number,
 ): TreePosition[] {
   const positions: TreePosition[] = [];
-  const halfW = FOREST_CONFIG.groundWidth / 2 - 2;
-  const halfD = FOREST_CONFIG.groundDepth / 2 - 2;
-  const minSpacing = 2.5;
+  const maxR = FOREST_CONFIG.worldRadius - 3; // margin from world edge
+  const minSpacing = 2.0;
   let seed = 0;
 
-  while (positions.length < count && seed < count * 20) {
-    const x = seededRandom(seed++) * halfW * 2 - halfW;
-    const z = seededRandom(seed++) * halfD * 2 - halfD;
-    const dist = Math.sqrt(x * x + z * z);
+  // First pass: uniform distribution in circular area (60%)
+  const baseCount = Math.floor(count * 0.6);
+  while (positions.length < baseCount && seed < baseCount * 20) {
+    // Use polar coordinates for uniform circular distribution
+    const angle = seededRandom(seed++) * Math.PI * 2;
+    const r = Math.sqrt(seededRandom(seed++)) * maxR; // sqrt for uniform area distribution
+    const x = Math.cos(angle) * r;
+    const z = Math.sin(angle) * r;
 
-    if (dist < clearRadius) continue;
+    if (r < clearRadius) continue;
 
-    // Check spacing with existing trees
     let tooClose = false;
     for (const p of positions) {
       const dx = x - p.x;
@@ -63,6 +64,33 @@ export function createTreePositions(
     if (tooClose) continue;
 
     positions.push({ x, z });
+  }
+
+  // Second pass: dense outer ring (40%) for thick forest perimeter
+  const edgeMin = maxR * 0.6;
+  let edgeSeed = seed + 10000;
+  const edgeTarget = count - positions.length;
+  let edgeCount = 0;
+
+  while (edgeCount < edgeTarget && edgeSeed < seed + 10000 + edgeTarget * 30) {
+    const angle = seededRandom(edgeSeed++) * Math.PI * 2;
+    const r = edgeMin + seededRandom(edgeSeed++) * (maxR - edgeMin);
+    const x = Math.cos(angle) * r;
+    const z = Math.sin(angle) * r;
+
+    let tooClose = false;
+    for (const p of positions) {
+      const dx = x - p.x;
+      const dz = z - p.z;
+      if (dx * dx + dz * dz < minSpacing * minSpacing) {
+        tooClose = true;
+        break;
+      }
+    }
+    if (tooClose) continue;
+
+    positions.push({ x, z });
+    edgeCount++;
   }
 
   return positions;

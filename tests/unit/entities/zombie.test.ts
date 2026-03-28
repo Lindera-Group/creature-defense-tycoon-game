@@ -4,7 +4,9 @@ import {
   moveTowardPlayer,
   isInAttackRange,
   computeZombieDamage,
+  findNearestTarget,
 } from "@game/entities/zombieHelpers";
+import type { TargetableEntity } from "@game/entities/zombieHelpers";
 
 describe("Green Zombie", () => {
   const config = ENEMIES.zombie_green;
@@ -92,5 +94,63 @@ describe("Green Zombie", () => {
       expect(result.damage).toBe(0);
       expect(result.attacked).toBe(false);
     });
+  });
+});
+
+describe("findNearestTarget", () => {
+  const zombiePos = { x: 0, z: 0 };
+
+  it("returns null for empty target list", () => {
+    expect(findNearestTarget(zombiePos, [])).toBeNull();
+  });
+
+  it("returns player when no buildings are present", () => {
+    const targets: TargetableEntity[] = [
+      { type: "player", id: "player", x: 5, z: 0 },
+    ];
+    const result = findNearestTarget(zombiePos, targets);
+    expect(result?.type).toBe("player");
+    expect(result?.id).toBe("player");
+  });
+
+  it("returns nearest turret when closer than player", () => {
+    const targets: TargetableEntity[] = [
+      { type: "player", id: "player", x: 10, z: 0 },
+      { type: "turret", id: "turret_1", x: 3, z: 0 },
+    ];
+    const result = findNearestTarget(zombiePos, targets);
+    expect(result?.type).toBe("turret");
+    expect(result?.id).toBe("turret_1");
+  });
+
+  it("returns nearest fortification when it is the closest entity", () => {
+    const targets: TargetableEntity[] = [
+      { type: "player", id: "player", x: 8, z: 0 },
+      { type: "turret", id: "turret_1", x: 5, z: 0 },
+      { type: "fortification", id: "fort_0", x: 2, z: 0 },
+    ];
+    const result = findNearestTarget(zombiePos, targets);
+    expect(result?.type).toBe("fortification");
+    expect(result?.id).toBe("fort_0");
+  });
+
+  it("returns player when player is the closest entity", () => {
+    const targets: TargetableEntity[] = [
+      { type: "player", id: "player", x: 1, z: 0 },
+      { type: "turret", id: "turret_1", x: 6, z: 0 },
+      { type: "fortification", id: "fort_0", x: 4, z: 4 },
+    ];
+    const result = findNearestTarget(zombiePos, targets);
+    expect(result?.type).toBe("player");
+  });
+
+  it("handles targets in all quadrants and finds closest by Euclidean distance", () => {
+    const targets: TargetableEntity[] = [
+      { type: "turret", id: "turret_ne", x: 3, z: 3 },   // dist² = 18
+      { type: "fortification", id: "fort_sw", x: -2, z: -2 }, // dist² = 8
+      { type: "player", id: "player", x: -1, z: 0 },     // dist² = 1
+    ];
+    const result = findNearestTarget(zombiePos, targets);
+    expect(result?.id).toBe("player");
   });
 });

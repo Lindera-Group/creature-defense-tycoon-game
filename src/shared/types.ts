@@ -17,6 +17,8 @@ export type EnemyType =
   | "zombie_boss"
   | "werewolf"
   | "werewolf_alpha"
+  | "werewolf_super"
+  | "werewolf_giant"
   | "werewolf_boss";
 
 /** Weapon categories */

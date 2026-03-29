@@ -32,6 +32,7 @@ interface GameStoreActions {
   setAnnouncement: (text: string) => void;
   setBossHealth: (health: number, maxHealth: number) => void;
   clearBoss: () => void;
+  rebirth: () => void;
   resetGame: () => void;
 }
 
@@ -113,6 +114,25 @@ export const useGameStore = create<GameStoreState & GameStoreActions>()(
 
     clearBoss: () =>
       set((state) => {
+        state.bossHealth = 0;
+        state.bossMaxHealth = 0;
+      }),
+
+    rebirth: () =>
+      set((state) => {
+        const nextPhase = Math.min(3, state.phase + 1) as RebirthPhase;
+        // Keep weapons and coins, reset wave/health/buildings
+        state.phase = nextPhase;
+        state.wave = 0;
+        state.playerHealth = PLAYER_DEFAULTS.health;
+        state.playerMaxHealth = PLAYER_DEFAULTS.health;
+        state.enemiesAlive = 0;
+        state.bossDefeated = false;
+        state.gameStarted = false;
+        state.gamePaused = false;
+        state.gameOver = false;
+        state.isVictory = false;
+        state.announcement = "";
         state.bossHealth = 0;
         state.bossMaxHealth = 0;
       }),

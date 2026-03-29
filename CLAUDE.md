@@ -98,6 +98,25 @@ See [.claude/docs/ORIGINAL_PROMPT.md](.claude/docs/ORIGINAL_PROMPT.md) for the f
 - **CI/CD**: GitHub Actions → VPS auto-deploy on push to main
 - **Infra**: Traefik reverse proxy + Let's Encrypt SSL
 
+## Version Snapshots
+
+Each major version is saved as a playable snapshot under `public/` so the game's evolution can be revisited:
+
+| Version | Path | URL | Description |
+|---------|------|-----|-------------|
+| v1 | `public/first/` | `/first/` | Initial gameplay — 5 waves, basic combat, square world |
+| v2 | `public/second/` | `/second/` | Full 30 waves, all zombie types, boss, 7 weapons, projectiles |
+| v3 | `public/third/` | `/third/` | Round world, zombie AI, placement preview, sprint, camera controls |
+
+**When to create a new version:** Only when the game feels meaningfully evolved — new mechanics, major visual changes, or significant gameplay shifts. Not for bug fixes or minor tweaks. A good rule of thumb: if Tage would notice the difference immediately, it's a new version.
+
+**How to create a version:**
+1. `npm run build`
+2. `cp -r dist/ public/<name>/` (use ordinal: first, second, third, fourth, ...)
+3. Remove nested snapshots: `rm -rf public/<name>/first/ public/<name>/second/` etc.
+4. Add route in `docker/nginx.conf`: `location /<name>/ { try_files $uri $uri/ /<name>/index.html; }`
+5. Commit, push — CI/CD auto-deploys
+
 ## Agent Ecosystem
 
 This project extends Martin's global agent ecosystem with game-specific agents:

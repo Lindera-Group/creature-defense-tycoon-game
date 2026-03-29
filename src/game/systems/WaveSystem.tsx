@@ -1,6 +1,6 @@
 import { useRef, useCallback, useEffect } from "react";
 import { useFrame } from "@react-three/fiber";
-import { WAVE_CONFIGS } from "@shared/waveConfigs";
+import { getWaveConfigsForPhase } from "@shared/waveConfigs";
 import { useGameStore } from "@game/stores/gameStore";
 import { useEconomyStore } from "@game/stores/economyStore";
 import type { EnemyManagerHandle } from "@game/entities/EnemyManager";
@@ -89,11 +89,14 @@ export function WaveSystem({ enemyManagerRef }: WaveSystemProps) {
   useFrame((_, delta) => {
     if (!gameStarted || gameOver) return;
 
+    const phase = useGameStore.getState().phase;
+    const waveConfigs = getWaveConfigsForPhase(phase);
+
     const state = stateRef.current;
     const waveIdx = waveIndexRef.current;
-    if (waveIdx < 0 || waveIdx >= WAVE_CONFIGS.length) return;
+    if (waveIdx < 0 || waveIdx >= waveConfigs.length) return;
 
-    const waveConfig = WAVE_CONFIGS[waveIdx];
+    const waveConfig = waveConfigs[waveIdx];
 
     if (state === "spawning") {
       spawnTimerRef.current += delta;
@@ -149,7 +152,7 @@ export function WaveSystem({ enemyManagerRef }: WaveSystemProps) {
     if (state === "waveComplete") {
       interWaveTimerRef.current += delta;
       if (interWaveTimerRef.current >= 2) {
-        if (waveIdx + 1 >= WAVE_CONFIGS.length) {
+        if (waveIdx + 1 >= waveConfigs.length) {
           setState("allComplete");
         } else {
           setState("interWave");

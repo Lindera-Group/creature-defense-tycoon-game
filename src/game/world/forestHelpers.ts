@@ -126,6 +126,7 @@ export function getTreePositions(): TreePosition[] {
 /**
  * Check if a position collides with any tree trunk.
  * Returns the pushed-out position if collision detected, or original position if clear.
+ * Runs multiple iterations to prevent getting stuck between adjacent trees.
  */
 export function resolveTreeCollision(
   x: number,
@@ -139,20 +140,26 @@ export function resolveTreeCollision(
   let outZ = z;
   let collided = false;
 
-  for (const tree of trees) {
-    const dx = outX - tree.x;
-    const dz = outZ - tree.z;
-    const distSq = dx * dx + dz * dz;
+  // Multiple iterations to resolve multi-tree overlaps
+  for (let iter = 0; iter < 3; iter++) {
+    let iterCollided = false;
+    for (const tree of trees) {
+      const dx = outX - tree.x;
+      const dz = outZ - tree.z;
+      const distSq = dx * dx + dz * dz;
 
-    if (distSq < colR * colR && distSq > 0) {
-      const dist = Math.sqrt(distSq);
-      const pushDist = colR - dist;
-      const nx = dx / dist;
-      const nz = dz / dist;
-      outX += nx * pushDist;
-      outZ += nz * pushDist;
-      collided = true;
+      if (distSq < colR * colR && distSq > 0) {
+        const dist = Math.sqrt(distSq);
+        const pushDist = colR - dist;
+        const nx = dx / dist;
+        const nz = dz / dist;
+        outX += nx * pushDist;
+        outZ += nz * pushDist;
+        collided = true;
+        iterCollided = true;
+      }
     }
+    if (!iterCollided) break; // converged
   }
 
   return { x: outX, z: outZ, collided };

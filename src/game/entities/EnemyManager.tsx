@@ -1,6 +1,7 @@
 import { useRef, useCallback, useImperativeHandle, forwardRef, useState, useEffect } from "react";
 import * as THREE from "three";
 import { Zombie } from "./Zombie";
+import { Werewolf } from "./Werewolf";
 import { useGameStore } from "@game/stores/gameStore";
 import type { EnemyType } from "@shared/types";
 
@@ -129,15 +130,27 @@ export const EnemyManager = forwardRef<
               else zombieGroupsRef.current.delete(enemy.id);
             }}
           >
-            <Zombie
-              id={enemy.id}
-              enemyType={enemy.enemyType}
-              startPosition={enemy.position}
-              playerRef={playerRef}
-              onDeath={handleDeath}
-              onDamagePlayer={handleDamagePlayer}
-              onTakeDamage={handleTakeDamage}
-            />
+            {enemy.enemyType.startsWith("werewolf") ? (
+              <Werewolf
+                id={enemy.id}
+                enemyType={enemy.enemyType}
+                startPosition={enemy.position}
+                playerRef={playerRef}
+                onDeath={handleDeath}
+                onDamagePlayer={handleDamagePlayer}
+                onTakeDamage={handleTakeDamage}
+              />
+            ) : (
+              <Zombie
+                id={enemy.id}
+                enemyType={enemy.enemyType}
+                startPosition={enemy.position}
+                playerRef={playerRef}
+                onDeath={handleDeath}
+                onDamagePlayer={handleDamagePlayer}
+                onTakeDamage={handleTakeDamage}
+              />
+            )}
           </group>
         ))}
     </group>

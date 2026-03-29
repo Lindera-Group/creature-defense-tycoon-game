@@ -23,6 +23,7 @@ import { VictoryScreen } from "@game/ui/VictoryScreen";
 import { WaveAnnouncement } from "@game/ui/WaveAnnouncement";
 import { useGameStore } from "@game/stores/gameStore";
 import { useEconomyStore } from "@game/stores/economyStore";
+import { useBuildingStore } from "@game/stores/buildingStore";
 
 function GameScene() {
   const playerRef = useRef<THREE.Group>(null);
@@ -30,7 +31,7 @@ function GameScene() {
   const damageNumbersRef = useRef<DamageNumbersHandle>(null);
   const projectileRef = useRef<ProjectileSystemHandle>(null);
 
-  // TEMP CHEAT: M = +5000 coins, N = kill all enemies + 5000 coins (skip wave)
+  // CHEATS: M = +5000 coins, N = kill all + skip wave, P = skip to next phase
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (e.key === "m" || e.key === "M") {
@@ -39,6 +40,15 @@ function GameScene() {
       if (e.key === "n" || e.key === "N") {
         useEconomyStore.getState().addCoins(5000);
         enemyManagerRef.current?.killAllEnemies();
+      }
+      if (e.key === "p" || e.key === "P") {
+        // Skip to next phase (rebirth)
+        const store = useGameStore.getState();
+        if (store.phase < 3) {
+          enemyManagerRef.current?.killAllEnemies();
+          useBuildingStore.getState().resetBuildings();
+          store.rebirth();
+        }
       }
     };
     window.addEventListener("keydown", handler);

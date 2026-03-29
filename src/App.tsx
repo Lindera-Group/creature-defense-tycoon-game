@@ -17,6 +17,8 @@ import { WeaponPickupButton } from "@game/ui/WeaponPickupButton";
 import { Shop } from "@game/ui/Shop";
 import { PlacementPreview } from "@game/ui/PlacementPreview";
 import { PlacementHUD } from "@game/ui/PlacementHUD";
+import { Hotbar } from "@game/ui/Hotbar";
+import { HammerSystem } from "@game/systems/HammerSystem";
 import { StartScreen } from "@game/ui/StartScreen";
 import { GameOverScreen } from "@game/ui/GameOverScreen";
 import { VictoryScreen } from "@game/ui/VictoryScreen";
@@ -89,6 +91,7 @@ function GameScene() {
       <ProjectileSystem ref={projectileRef} enemyManagerRef={enemyManagerRef} onImpact={handleHit} />
       <TurretSystem enemyManagerRef={enemyManagerRef} onSpawnProjectile={handleSpawnProjectile} />
       <PlacementPreview />
+      <HammerSystem />
     </>
   );
 }
@@ -116,6 +119,7 @@ export function App() {
       {gameStarted && !gameOver && !isVictory && <BossHealthBar />}
       {gameStarted && !gameOver && !isVictory && <Shop />}
       {gameStarted && !gameOver && !isVictory && <PlacementHUD />}
+      {gameStarted && !gameOver && !isVictory && <Hotbar />}
       {gameOver && !isVictory && <GameOverScreen />}
       {isVictory && <VictoryScreen />}
       {announcement && <WaveAnnouncement text={announcement} />}

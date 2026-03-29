@@ -3,6 +3,7 @@ import { immer } from "zustand/middleware/immer";
 import type { WeaponType, TurretType, FortificationType } from "@shared/types";
 import { WEAPONS, TURRETS, FORTIFICATIONS } from "@shared/constants";
 import { useGameStore } from "./gameStore";
+import { useHotbarStore } from "./hotbarStore";
 
 interface CoinSpawnRequest {
   position: [number, number, number];
@@ -63,6 +64,7 @@ export const useEconomyStore = create<EconomyStoreState & EconomyStoreActions>()
 
       gameState.addWeapon(weaponType);
       gameState.equipWeapon(weaponType);
+      useHotbarStore.getState().addWeaponSlot(weaponType);
       return true;
     },
 

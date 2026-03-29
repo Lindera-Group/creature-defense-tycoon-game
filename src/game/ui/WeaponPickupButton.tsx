@@ -1,4 +1,5 @@
 import { useGameStore } from "@game/stores/gameStore";
+import { useHotbarStore } from "@game/stores/hotbarStore";
 
 export function WeaponPickupButton() {
   const ownedWeapons = useGameStore((s) => s.ownedWeapons);
@@ -13,6 +14,7 @@ export function WeaponPickupButton() {
     addWeapon("bat");
     equipWeapon("bat");
     startGame();
+    useHotbarStore.getState().addWeaponSlot("bat");
   };
 
   return (

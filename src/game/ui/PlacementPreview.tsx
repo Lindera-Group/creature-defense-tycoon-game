@@ -2,7 +2,7 @@ import { useRef, useEffect, useState, useCallback } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import * as THREE from "three";
 import { useBuildingStore } from "@game/stores/buildingStore";
-import { useEconomyStore } from "@game/stores/economyStore";
+import { useHotbarStore } from "@game/stores/hotbarStore";
 import { isValidPlacement, snapToGrid } from "@game/systems/placementHelpers";
 import { getTreePositions } from "@game/world/forestHelpers";
 import { TURRETS, FORTIFICATIONS } from "@shared/constants";
@@ -220,13 +220,6 @@ export function PlacementPreview() {
         setShowGrid((prev) => !prev);
       }
       if (e.key === "Escape") {
-        if (placingType && placingCategory) {
-          const config =
-            placingCategory === "turret"
-              ? TURRETS[placingType as TurretType]
-              : FORTIFICATIONS[placingType as FortificationType];
-          if (config) useEconomyStore.getState().addCoins(config.cost);
-        }
         cancelPlacing();
       }
     };
@@ -247,6 +240,9 @@ export function PlacementPreview() {
     }
     cancelPlacing();
     rotationRef.current = 0;
+    // Consume the blueprint slot
+    const hotbar = useHotbarStore.getState();
+    hotbar.removeSlot(hotbar.selectedIndex);
   }, [placingType, placingCategory, placeTurret, placeFortification, cancelPlacing]);
 
   useEffect(() => {

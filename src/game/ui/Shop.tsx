@@ -2,6 +2,7 @@ import { useState, useRef, useCallback } from "react";
 import { useEconomyStore } from "@game/stores/economyStore";
 import { useGameStore } from "@game/stores/gameStore";
 import { useBuildingStore } from "@game/stores/buildingStore";
+import { useHotbarStore } from "@game/stores/hotbarStore";
 import { WEAPONS, TURRETS, FORTIFICATIONS } from "@shared/constants";
 import type { WeaponType, TurretType, FortificationType } from "@shared/types";
 
@@ -44,7 +45,6 @@ export function Shop() {
   const equippedWeapon = useGameStore((s) => s.equippedWeapon);
   const phase = useGameStore((s) => s.phase);
 
-  const startPlacing = useBuildingStore((s) => s.startPlacing);
   const placedTurrets = useBuildingStore((s) => s.placedTurrets);
 
   // Filter current phase weapons (exclude free "bat")
@@ -290,7 +290,11 @@ export function Shop() {
 
                     {/* Buy button */}
                     <button
-                      onClick={() => buyWeapon(weaponType)}
+                      onClick={() => {
+                        if (buyWeapon(weaponType)) {
+                          useHotbarStore.getState().addWeaponSlot(weaponType);
+                        }
+                      }}
                       disabled={owned || !canAfford || isPhaseLocked}
                       className={`
                         w-full py-2.5 rounded-lg font-black text-sm tracking-wider
@@ -422,8 +426,7 @@ export function Shop() {
                           <button
                             onClick={() => {
                               if (buyTurret(turretType)) {
-                                startPlacing(turretType, "turret");
-                                setIsOpen(false);
+                                useHotbarStore.getState().addBlueprint(turretType, "turret");
                               }
                             }}
                             disabled={!canAfford || !canPlace}
@@ -540,8 +543,7 @@ export function Shop() {
                           <button
                             onClick={() => {
                               if (buyFortification(fortType)) {
-                                startPlacing(fortType, "fortification");
-                                setIsOpen(false);
+                                useHotbarStore.getState().addBlueprint(fortType, "fortification");
                               }
                             }}
                             disabled={!canAfford || isPhaseLocked}

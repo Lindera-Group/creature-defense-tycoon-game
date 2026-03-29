@@ -107,6 +107,7 @@ Each major version is saved as a playable snapshot under `public/` so the game's
 | v1 | `public/first/` | `/first/` | Initial gameplay — 5 waves, basic combat, square world |
 | v2 | `public/second/` | `/second/` | Full 30 waves, all zombie types, boss, 7 weapons, projectiles |
 | v3 | `public/third/` | `/third/` | Round world, zombie AI, placement preview, sprint, camera controls |
+| v4 | `public/fourth/` | `/fourth/` | Rebirth system (4 phases), werewolves, hotbar, blueprints, hammer |
 
 **When to create a new version:** Only when the game feels meaningfully evolved — new mechanics, major visual changes, or significant gameplay shifts. Not for bug fixes or minor tweaks. A good rule of thumb: if Tage would notice the difference immediately, it's a new version.
 
